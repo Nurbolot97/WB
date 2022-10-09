@@ -54,31 +54,58 @@ def get_info_brand(message):
     chat_id = message.chat.id
     bot.send_message(chat_id, "Пожалуйста ожидайте...")
     from_telegram = message.text
-    url = "https://www.wildberries.ru/catalog/0/search.aspx?sort=popular&search=" + f"{from_telegram}"
-    driver.get(url)
-    time.sleep(2)
-    
-    try:
-        selen_data = driver.find_element(By.CLASS_NAME, "catalog-page__text")
-        if selen_data:
-            bot.send_message(chat_id, selen_data.text)
-            bot.send_message(chat_id, "Повторите попытку", reply_markup=tip_board)
-    except:
-        brands_name = driver.find_elements(By.CLASS_NAME, "brand-name")  
-        goods_name = driver.find_elements(By.CLASS_NAME, "goods-name")
-        price = driver.find_elements(By.CLASS_NAME, "lower-price")
-        marks = driver.find_elements(By.CLASS_NAME, "product-card__count")
-                        
-        df = pd.DataFrame.from_dict({"brands_name": [i.text for i in brands_name], 
-                                    "goods_name": [j.text for j in goods_name], 
-                                    "price": [n.text for n in price],
-                                    "marks": [k.text for k in marks]})
-        df.to_csv('./wb.csv') 
-                    
-        bot.send_message(chat_id, "Ваш готовый файл:")
-        document = open("wb.csv", "rb")
-        bot.send_document(chat_id, document)
-        bot.send_message(chat_id, "Возвращаю Вас на главное", reply_markup=tip_board)
+    counter = 0
+    main_df_res = pd.DataFrame({"brands_name": [], "goods_name": [], "price": [], "marks": []})
+    for i in range(0, 5):
+        if counter == 0:
+            url = f"https://www.wildberries.ru/catalog/0/search.aspx?" + f"sort=popular&search=" + f"{from_telegram}"
+            driver.get(url)
+            time.sleep(3)
+            try:
+                selen_data = driver.find_element(By.CLASS_NAME, "catalog-page__text")
+                if selen_data:
+                    bot.send_message(chat_id, selen_data.text)
+                    bot.send_message(chat_id, "Повторите попытку", reply_markup=tip_board)
+            except:
+                brands_name = driver.find_elements(By.CLASS_NAME, "brand-name")  
+                goods_name = driver.find_elements(By.CLASS_NAME, "goods-name")
+                price = driver.find_elements(By.CLASS_NAME, "lower-price")
+                marks = driver.find_elements(By.CLASS_NAME, "product-card__count")
+                
+                df1 = pd.DataFrame.from_dict({"brands_name": [i.text for i in brands_name], 
+                                            "goods_name": [j.text for j in goods_name], 
+                                            "price": [n.text for n in price],
+                                            "marks": [k.text for k in marks]})
+                pd.concat([main_df_res, df1])
+        else:
+            url = f"https://www.wildberries.ru/catalog/0/search.aspx?" + f"page={str(counter)}&" + f"sort=popular&search=" + f"{from_telegram}"
+            driver.get(url)
+            time.sleep(3)
+            try:
+                selen_data = driver.find_element(By.CLASS_NAME, "catalog-page__text")
+                if selen_data:
+                    bot.send_message(chat_id, selen_data.text)
+                    bot.send_message(chat_id, "Повторите попытку", reply_markup=tip_board)
+            except:
+                brands_name = driver.find_elements(By.CLASS_NAME, "brand-name")  
+                goods_name = driver.find_elements(By.CLASS_NAME, "goods-name")
+                price = driver.find_elements(By.CLASS_NAME, "lower-price")
+                marks = driver.find_elements(By.CLASS_NAME, "product-card__count")
+                
+                df = pd.DataFrame.from_dict({"brands_name": [i.text for i in brands_name], 
+                                            "goods_name": [j.text for j in goods_name], 
+                                            "price": [n.text for n in price],
+                                            "marks": [k.text for k in marks]})
+                pd.concat([main_df_res,df])
+                # result.to_csv('./wb.csv', index=False) 
+                            
+                # bot.send_message(chat_id, "Ваш готовый файл:")
+                # document = open("wb.csv", "rb")
+                # bot.send_document(chat_id, document)
+                # bot.send_message(chat_id, "Возвращаю Вас на главное", reply_markup=tip_board)
+        counter += 1
+    print(main_df_res)
+
 
 def get_category(message):
     chat_id = message.chat.id
